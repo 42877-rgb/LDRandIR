@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teachable Machine Image Model</title>
     
-    <!-- Google Fonts เพื่อความสวยงาม -->
+    <!-- นำเข้า Google Fonts เพื่อเพิ่มความทันสมัยและสวยงาม -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
@@ -62,11 +62,14 @@
         .btn-start:hover {
             background-color: #45a049;
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
         }
 
         .btn-start:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
         }
 
         #webcam-container {
@@ -83,6 +86,7 @@
             outline: 1px solid #ddd;
         }
 
+        /* ปรับแต่งส่วนแสดงผลของกล้องให้เต็มกรอบสวยงาม */
         #webcam-container canvas {
             display: block;
             border-radius: 8px;
@@ -96,6 +100,7 @@
             text-align: left;
         }
 
+        /* ตกแต่งแถบแสดงผลคลาสและเปอร์เซ็นต์ */
         .label-row {
             background-color: #f8f9fa;
             border-left: 4px solid #007bff;
@@ -107,6 +112,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         
         .loading {
@@ -130,80 +136,79 @@
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 <script type="text/javascript">
-    const URL = "https://teachablemachine.withgoogle.com/models/flTyI50XI/";[cite: 3]
+    const URL = "https://teachablemachine.withgoogle.com/models/flTyI50XI/";[cite: 4]
 
     let model, webcam, labelContainer, maxPredictions;
-    let nextPredictTime = 0; // ตัวแปรสำหรับคำนวณเวลาถอยหลัง 3 วินาที
+    let nextPredictTime = 0; // ตัวแปรสำหรับจับเวลาถอยหลัง 3 วินาที
 
+    // เรียกโหลดโมเดลภาพและตั้งค่าเว็บแคมตามต้นฉบับดั้งเดิม[cite: 4]
     async function init() {
         const startBtn = document.getElementById("start-btn");
         const placeholderText = document.getElementById("placeholder-text");
         
         startBtn.disabled = true;
         startBtn.innerText = "Loading...";
+        if(placeholderText) placeholderText.innerText = "กำลังเข้าถึงกล้อง...";
 
         try {
-            const modelURL = URL + "model.json";[cite: 3]
-            const metadataURL = URL + "metadata.json";[cite: 3]
+            const modelURL = URL + "model.json";[cite: 4]
+            const metadataURL = URL + "metadata.json";[cite: 4]
 
-            // โหลดโมเดลด้วยคำสั่งเดิมที่ใช้ได้[cite: 3]
-            model = await tmImage.load(modelURL, metadataURL);[cite: 3]
-            maxPredictions = model.getTotalClasses();[cite: 3]
+            // โหลดโมเดลและเมทาดาตา[cite: 4]
+            model = await tmImage.load(modelURL, metadataURL);[cite: 4]
+            maxPredictions = model.getTotalClasses();[cite: 4]
 
-            // ใช้ระบบเปิดเว็บแคมดั้งเดิมของ Teachable Machine (แก้ปัญหากล้องไม่ขึ้น)[cite: 3]
+            // ฟังก์ชันตั้งค่าเว็บแคมดั้งเดิม 100%[cite: 4]
             const flip = true; 
-            webcam = new tmImage.Webcam(200, 200, flip);[cite: 3]
-            await webcam.setup();[cite: 3]
-            await webcam.play();[cite: 3]
-            
-            // เริ่มต้นวาดเฟรมภาพกล้องลูปต่อเนื่อง
-            window.requestAnimationFrame(loop);
+            webcam = new tmImage.Webcam(200, 200, flip);[cite: 4]
+            await webcam.setup(); // ขอสิทธิ์เข้าถึงกล้องเว็บแคม[cite: 4]
+            await webcam.play();[cite: 4]
+            window.requestAnimationFrame(loop); // เริ่มลูปดึงภาพเฟรมกล้อง[cite: 4]
 
-            // แสดงผลกล้องบนหน้าเว็บ
+            // แสดงผลแคนวาสกล้องใน DOM[cite: 4]
             const webcamContainer = document.getElementById("webcam-container");
             webcamContainer.innerHTML = ""; 
-            webcamContainer.appendChild(webcam.canvas);[cite: 3]
+            webcamContainer.appendChild(webcam.canvas);[cite: 4]
             
-            // เตรียมพื้นที่แสดงข้อความคะแนน
-            labelContainer = document.getElementById("label-container");[cite: 3]
-            labelContainer.innerHTML = ""; 
-            for (let i = 0; i < maxPredictions; i++) {[cite: 3]
-                labelContainer.appendChild(document.createElement("div"));[cite: 3]
+            labelContainer = document.getElementById("label-container");[cite: 4]
+            labelContainer.innerHTML = "";
+            for (let i = 0; i < maxPredictions; i++) { 
+                labelContainer.appendChild(document.createElement("div"));[cite: 4]
             }
 
             startBtn.innerText = "Running...";
             
-            // ตั้งเวลาให้ทำการทำนายผลทันทีในเฟรมแรก
+            // กำหนดเวลาเริ่มต้นสำหรับการตรวจจับรอบแรกทันที
             nextPredictTime = Date.now();
 
         } catch (error) {
             console.error(error);
-            alert("เปิดกล้องล้มเหลว! ตรวจสอบสิทธิ์การเข้าถึงกล้อง หรือรันผ่านโปรโตคอล HTTPS");
+            alert("ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์ของกล้อง หรือรันแอปพลิเคชันผ่าน HTTPS เท่านั้น");
             startBtn.disabled = false;
             startBtn.innerText = "Start";
         }
     }
 
     async function loop() {
-        webcam.update(); // อัปเดตกล้องเรื่อยๆ ให้ภาพสดใหม่ไม่ค้าง[cite: 3]
+        webcam.update(); // อัปเดตภาพเฟรมของกล้องตามโค้ดดั้งเดิม เพื่อให้ภาพเคลื่อนไหวลื่นไหล[cite: 4]
         
         const currentTime = Date.now();
-        // ถ้าเวลาปัจจุบันเดินไปถึงเวลาที่กำหนดไว้ (ทุกๆ 3 วินาที)
+        // เงื่อนไขตรวจสอบเวลา: ถ้าเวลาปัจจุบันผ่านไปครบ 3 วินาที (3000 มิลลิวินาที) จึงจะทำการ Predict
         if (currentTime >= nextPredictTime) {
-            await predict(); // ส่งรูปในแคนวาสกล้องไปให้ AI ตรวจจับ[cite: 3]
-            nextPredictTime = currentTime + 3000; // ตั้งเวลาตรวจจับรอบถัดไปอีก 3 วินาทีข้างหน้า
+            await predict(); // เรียกคำสั่งวิเคราะห์ประมวลผล[cite: 4]
+            nextPredictTime = currentTime + 3000; // ตั้งเวลาการเรียกครั้งต่อไปอีก 3 วินาทีข้างหน้า
         }
         
-        window.requestAnimationFrame(loop);[cite: 3]
+        window.requestAnimationFrame(loop);[cite: 4]
     }
 
+    // ฟังก์ชันรันภาพเว็บแคมผ่านโมเดลปัญญาประดิษฐ์[cite: 4]
     async function predict() {
-        // ใช้คำสั่งทำนายผลดั้งเดิมจาก canvas ของไลบรารี[cite: 3]
-        const prediction = await model.predict(webcam.canvas);[cite: 3]
-        for (let i = 0; i < maxPredictions; i++) {[cite: 3]
-            // จัดแต่งข้อความให้สวยงามแยกคลาสกับคะแนนเป็นเปอร์เซ็นต์
-            const className = prediction[i].className;[cite: 3]
-            const probability = (prediction[i].probability * 100).toFixed(0) + "%"; 
+        const prediction = await model.predict(webcam.canvas);[cite: 4]
+        for (let i = 0; i < maxPredictions; i++) {[cite: 4]
+            const className = prediction[i].className;
+            // ปรับแต่งการแสดงผลคะแนนความน่าจะเป็นให้อยู่ในรูปของเปอร์เซ็นต์อ่านง่าย (เช่น 95%) แทนทศนิยมดั้งเดิม
+            const probability = (prediction[i].probability * 100).toFixed(0) + "%";
             
             labelContainer.childNodes[i].className = "label-row";
             labelContainer.childNodes[i].innerHTML = `
@@ -213,5 +218,6 @@
         }
     }
 </script>
+
 </body>
-</html></script>
+</html>
